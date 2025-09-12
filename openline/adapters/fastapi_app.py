@@ -21,7 +21,7 @@ def post_frame(frame: Frame) -> BusReply:
     # update telemetry with holonomy
     frame.telem.delta_hol = holonomy_gap(d_prev, d_now) if d_prev else 0.0
 
-    return BusReply(ok=True, digest=d_now, telem=frame.telem)
+return BusReply(ok=True, digest=d_now, telem=frame.telem.dict())
 
 def main() -> None:
     import uvicorn
