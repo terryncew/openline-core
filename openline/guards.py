@@ -14,7 +14,6 @@ def _adds_resolver(morphs: List[Dict[str, Any]]) -> bool:
     """
     Heuristic: did this frame add an Assumption/Counter node?
     We look for a morph like {"op": "add_node", "node": {"type": "Assumption"|"Counter", ...}}
-    This matches your simple Dict-based 'morphs' in schema.py.
     """
     for m in morphs:
         if m.get("op") == "add_node":
@@ -42,7 +41,6 @@ def guard_check(frame: Frame, *, prev_digest: Optional[Digest] = None) -> None:
 
     # 2) Frontier deletion (x_frontier must not drop via deletions-only)
     if prev_digest is not None and d.x_frontier < prev_digest.x_frontier:
-        # If there are any deletion morphs AND no resolver node was added → reject
         has_deletes = any(m.get("op") in ("del_node", "del_edge") for m in frame.morphs)
         if has_deletes and not _adds_resolver(frame.morphs):
             raise ValueError(
