@@ -203,3 +203,44 @@ Keep `Δ_hol` small between SYNC and STITCH, and your agents won’t “clean up
 
 **OpenLine lets agents speak geometry.**  
 Copy the demo, shape your first Frame, and ship.
+
+-----
+
+## 🚀 Quickstart
+
+### Option 1: Run in GitHub Codespaces
+1. Click the green **Code** button → **Create codespace**.
+2. In the terminal:
+   ```bash
+   uv sync --extra server
+   uv run olp-server
+
+	3.	Open a second terminal:
+
+python examples/send_frame.py
+
+
+
+Option 2: Run locally
+	1.	Install uv.
+	2.	Clone the repo:
+
+git clone https://github.com/terryncew/openline-core.git
+cd openline-core
+
+
+	3.	Install + run:
+
+uv sync --extra server
+uv run olp-server
+
+
+	4.	In another terminal:
+
+python examples/send_frame.py
+
+
+
+You should see a JSON reply with ok: true and a digest.
+
+
