@@ -14,16 +14,6 @@ OLP sends small graphs (the **shape**) plus smooth updates (the **liquid**). Tha
 
 -----
 
-## Quickstart (one command)
-
-```bash
-# Python 3.11+ and uv installed
-uv sync && uv run examples/quickstart.py
-```
-
-**Server:** `http://127.0.0.1:8088/frame` (FastAPI).  
-Each posted Frame is re-digested and guard-checked.
-
 ### Hello Frame (curl)
 
 ```bash
