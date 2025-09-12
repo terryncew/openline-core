@@ -1,7 +1,7 @@
 # openline/digest.py
 from __future__ import annotations
 
-from typing import List, Optional, Tuple
+from typing import List, Optional
 import networkx as nx
 
 from openline.schema import Node, Edge, Digest
