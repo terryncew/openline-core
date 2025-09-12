@@ -304,3 +304,19 @@ def guard_check(
 def frame_json_schema() -> Dict[str, Any]:
     """Return the JSON Schema for Frame (wire contract)."""
     return Frame.model_json_schema()
+# --- Telemetry & BusReply (for FastAPI response) ---
+from pydantic import BaseModel, Field  # ok if already imported above
+
+class Telemetry(BaseModel):
+    phi_sem: float = Field(0.0, ge=0.0, le=1.0)
+    phi_topo: float = Field(0.0, ge=0.0, le=1.0)
+    delta_hol: float = Field(0.0, ge=0.0)
+    kappa_eff: float = Field(0.0, ge=0.0)
+    commutator: float = Field(0.0, ge=0.0)
+    cost_tokens: int = Field(0, ge=0)
+    da_drift: float = Field(0.0, ge=0.0)
+
+class BusReply(BaseModel):
+    ok: bool
+    digest: Digest
+    telem: Telemetry
