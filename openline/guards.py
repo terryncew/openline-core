@@ -6,29 +6,50 @@ from typing import Optional, Dict, Any, List
 from openline.schema import Frame, Digest
 from openline.digest import holonomy_gap
 
-# --- tuned Δ_scale caps loader (reads data/params.json; caches ~60s)
+# --- tuned Δ_scale caps loader (reads data/params.json; auto-invalidates) ---
 import json, time
 from pathlib import Path
-_PARAMS = {"ts": 0, "data": {"scale_caps": {}}}
+
 _PARAMS_PATH = Path("data/params.json")
+_PARAMS_CACHE = {"ts": 0.0, "mtime": None, "data": {"scale_caps": {}}}
 
-def _load_params(ttl=60):
+def _load_params(ttl: float = 60.0):
+    """Return latest params; if file is gone or changed, refresh immediately.
+    If unchanged and within ttl, return cached."""
     now = time.time()
-    if now - _PARAMS["ts"] < ttl:
-        return _PARAMS["data"]
-    try:
-        data = json.loads(_PARAMS_PATH.read_text())
-        _PARAMS.update({"ts": now, "data": data})
-    except Exception:
-        _PARAMS.update({"ts": now, "data": {"scale_caps": {}}})
-    return _PARAMS["data"]
+    exists = _PARAMS_PATH.exists()
+    mtime = _PARAMS_PATH.stat().st_mtime if exists else None
 
-def tuned_cap(asset, pair, default_cap):
+    # reuse cache only if file state/mtime unchanged AND within TTL
+    if (now - _PARAMS_CACHE["ts"] < ttl) and (_PARAMS_CACHE["mtime"] == mtime):
+        return _PARAMS_CACHE["data"]
+
+    if not exists:
+        _PARAMS_CACHE.update({"ts": now, "mtime": None, "data": {"scale_caps": {}}})
+        return _PARAMS_CACHE["data"]
+
+    try:
+        data = json.loads(_PARAMS_PATH.read_text(encoding="utf-8"))
+        if not isinstance(data, dict):
+            data = {"scale_caps": {}}
+    except Exception:
+        data = {"scale_caps": {}}  # corrupt file → safe default
+
+    _PARAMS_CACHE.update({"ts": now, "mtime": mtime, "data": data})
+    return _PARAMS_CACHE["data"]
+
+def tuned_cap(asset: str, pair: str, default_cap: float):
+    """Look up learned cap; fall back to provided default if missing."""
     params = _load_params()
-    cap = (params.get("scale_caps", {})
-                .get((asset or "default").lower(), {})
-                .get(pair or ""))
-    return float(cap) if isinstance(cap, (int, float)) else default_cap
+    cap = (
+        params.get("scale_caps", {})
+              .get((asset or "default").lower(), {})
+              .get(pair or "")
+    )
+    try:
+        return float(cap) if cap is not None else float(default_cap)
+    except Exception:
+        return float(default_cap)
 
 # Defaults (you can tune later)
 CYCLE_PLUS_CAP = 4
