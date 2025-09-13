@@ -1,0 +1,20 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>OpenLine Receipt Demo</title>
+<script type="module" src="../receipts-kit/openline-card.js"></script>
+
+<h3>Scale-consistency receipt (static JSON)</h3>
+<openline-card mode="compact">
+  <script type="application/json">
+  {
+    "claim": "SPY likely up tomorrow",
+    "because": ["FlowState day decode", "30d minute context"],
+    "but": ["Scale drift Δ_scale = 0.028 (min→hour vs direct hour)"],
+    "so": "Within 3% tolerance — recheck at close",
+    "telem": { "delta_scale": 0.028 },
+    "threshold": 0.03,
+    "model": "ibm-research/flowstate-r1",
+    "attrs": { "cadence": "day" }
+  }
+  </script>
+</openline-card>
