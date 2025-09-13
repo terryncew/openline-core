@@ -110,5 +110,6 @@ def guard_check(frame):
     cap = ASSET_CAPS.get(asset, DELTA_SCALE_CAP_DEFAULT)
     pair_caps = {"min↔hour": cap, "hour↔day": cap*1.2, "day↔week": cap*1.6}
     cap_eff = pair_caps.get(pair, cap)
+    cap_eff = tuned_cap(asset, pair, cap_eff)  # ← use learned cap if present
     if ds and ds > cap_eff and not _has_explanation(frame):
         raise ValueError(f"Δ_scale={ds:.3f} exceeds cap={cap_eff:.3f} without Counter/Assumption/edge/tolerance")
