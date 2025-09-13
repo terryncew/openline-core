@@ -6,6 +6,30 @@ from typing import Optional, Dict, Any, List
 from openline.schema import Frame, Digest
 from openline.digest import holonomy_gap
 
+# --- tuned Δ_scale caps loader (reads data/params.json; caches ~60s)
+import json, time
+from pathlib import Path
+_PARAMS = {"ts": 0, "data": {"scale_caps": {}}}
+_PARAMS_PATH = Path("data/params.json")
+
+def _load_params(ttl=60):
+    now = time.time()
+    if now - _PARAMS["ts"] < ttl:
+        return _PARAMS["data"]
+    try:
+        data = json.loads(_PARAMS_PATH.read_text())
+        _PARAMS.update({"ts": now, "data": data})
+    except Exception:
+        _PARAMS.update({"ts": now, "data": {"scale_caps": {}}})
+    return _PARAMS["data"]
+
+def tuned_cap(asset, pair, default_cap):
+    params = _load_params()
+    cap = (params.get("scale_caps", {})
+                .get((asset or "default").lower(), {})
+                .get(pair or ""))
+    return float(cap) if isinstance(cap, (int, float)) else default_cap
+
 # Defaults (you can tune later)
 CYCLE_PLUS_CAP = 4
 DELTA_HOL_CAP = 2.0
