@@ -1,47 +1,55 @@
 # openline/adapters/fastapi_app.py
 from __future__ import annotations
 
-from typing import Dict, Optional
-from fastapi import FastAPI, HTTPException
+from typing import Any, Dict
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
-from openline.schema import Frame, BusReply, Digest
-from openline.digest import compute_digest, holonomy_gap
+# Reuse your existing guard
 from openline.guards import guard_check
 
-app = FastAPI(title="OpenLine Bus", version="0.1.0")
+app = FastAPI(title="OpenLine OLP bridge")
 
-# Last digest per stream (in-memory demo store)
-_LAST_DIGEST: Dict[str, Digest] = {}
+# open CORS so your sidecar / emitter can post from anywhere in dev
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-@app.post("/frame", response_model=BusReply)
-def post_frame(frame: Frame) -> BusReply:
-    """
-    Accept a Frame, recompute digest (bus = source of truth),
-    run guards, update Δ_hol, and return BusReply.
-    """
-    # Recompute digest
-    d_now = compute_digest(frame.nodes, frame.edges)
-    d_prev: Optional[Digest] = _LAST_DIGEST.get(frame.stream_id)
+@app.get("/health")
+def health():
+    return {"ok": True}
 
-    # Make sure guards see the recomputed values
-    frame.digest = d_now
-
-    # Guard checks → 422 on violation
+@app.post("/frame")
+async def post_frame(req: Request):
+    # 1) parse JSON safely
     try:
-        guard_check(frame, prev_digest=d_prev)
-    except ValueError as e:
-        raise HTTPException(status_code=422, detail=str(e)) from e
+        payload: Dict[str, Any] = await req.json()
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": f"bad json: {e}"}, status_code=400)
 
-    # Commit latest digest for this stream
-    _LAST_DIGEST[frame.stream_id] = d_now
+    # 2) be tolerant about missing keys
+    payload.setdefault("nodes", [])
+    payload.setdefault("edges", [])
+    payload.setdefault("morphs", [])
+    payload.setdefault("telem", {})
+    payload.setdefault("digest", None)
+    payload.setdefault("stream_id", payload.get("stream", "stack"))
 
-    # Update telemetry with holonomy gap computed on the bus
-    frame.telem.delta_hol = holonomy_gap(d_prev, d_now) if d_prev else 0.0
+    # 3) run delta-scale guard (and any others you added)
+    try:
+        guard_check(payload)
+    except Exception as e:
+        # return a clean validation-ish error instead of a 500
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=422)
 
-    # IMPORTANT: return a dict for telem so Pydantic is happy on all setups
-    return BusReply(ok=True, digest=d_now, telem=frame.telem.dict())
-
-def main() -> None:
-    """Entry point for `olp-server`."""
-    import uvicorn
-    uvicorn.run("openline.adapters.fastapi_app:app", host="127.0.0.1", port=8088, reload=False)
+    # 4) minimal success echo; you can expand later
+    return {
+        "ok": True,
+        "accepted": True,
+        "telem": payload.get("telem", {}),
+        "stream_id": payload.get("stream_id"),
+    }
