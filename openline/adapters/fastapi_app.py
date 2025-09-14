@@ -6,7 +6,7 @@ import json, time, uuid
 
 app = FastAPI(title="OpenLine OLP shim")
 
-# Permissive CORS (demo-friendly)
+# permissive CORS (demo-friendly)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"], allow_credentials=True,
@@ -24,7 +24,7 @@ async def health():
 async def post_frame(req: Request):
     """
     Accepts either {"frame": {...}} or raw {...}. Never 500s.
-    Logs a normalized frame and ACKs with counts.
+    Logs a normalized frame and ACKs.
     """
     raw = await req.body()
     if len(raw) > 256_000:
@@ -33,17 +33,13 @@ async def post_frame(req: Request):
         body = json.loads(raw or b"{}")
     except Exception:
         body = {}
-
-    # Accept both shapes
     frame = body.get("frame", body) if isinstance(body, dict) else {}
-
     nodes  = frame.get("nodes")  or []
     edges  = frame.get("edges")  or []
     morphs = frame.get("morphs") or []
     telem  = frame.get("telem")  or {}
     fid = str(uuid.uuid4())
 
-    # Best-effort log
     try:
         with FRAMES_LOG.open("a", encoding="utf-8") as f:
             f.write(json.dumps({"t": int(time.time()), "id": fid, "frame": frame}) + "\n")
