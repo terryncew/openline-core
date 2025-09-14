@@ -1,55 +1,67 @@
 # openline/adapters/fastapi_app.py
-from __future__ import annotations
-
-from typing import Any, Dict
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from pathlib import Path
+import json, time, uuid
 
-# Reuse your existing guard
-from openline.guards import guard_check
+app = FastAPI(title="OpenLine /frame shim")
 
-app = FastAPI(title="OpenLine OLP bridge")
-
-# open CORS so your sidecar / emitter can post from anywhere in dev
+# wide-open CORS so your client and card can hit it
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=["*"], allow_methods=["*"], allow_headers=["*"], allow_credentials=True
 )
+
+FRAMES_LOG = Path("data/frames.log")
+FRAMES_LOG.parent.mkdir(parents=True, exist_ok=True)
+
+def _json(data: dict) -> Response:
+    return Response(
+        content=json.dumps(data),
+        media_type="application/json",
+        headers={"Cache-Control": "no-store"}  # always fresh for the card
+    )
 
 @app.get("/health")
 def health():
-    return {"ok": True}
+    return _json({"ok": True, "time": int(time.time())})
 
 @app.post("/frame")
 async def post_frame(req: Request):
-    # 1) parse JSON safely
+    # ~250 KB guard so a bad client can't wedge the server
+    raw = await req.body()
+    if raw and len(raw) > 256_000:
+        return _json({"ok": False, "error": "payload too large"})
+
+    # accept either {"frame": {...}} or raw {...}
     try:
-        payload: Dict[str, Any] = await req.json()
-    except Exception as e:
-        return JSONResponse({"ok": False, "error": f"bad json: {e}"}, status_code=400)
+        body = json.loads(raw.decode() if isinstance(raw, (bytes, bytearray)) else raw or b"{}")
+    except Exception:
+        body = {}
 
-    # 2) be tolerant about missing keys
-    payload.setdefault("nodes", [])
-    payload.setdefault("edges", [])
-    payload.setdefault("morphs", [])
-    payload.setdefault("telem", {})
-    payload.setdefault("digest", None)
-    payload.setdefault("stream_id", payload.get("stream", "stack"))
+    frame = body.get("frame", body) or {}
 
-    # 3) run delta-scale guard (and any others you added)
+    # normalize to the bits we actually care about (keeps digest if present)
+    nodes  = frame.get("nodes")  or []
+    edges  = frame.get("edges")  or []
+    morphs = frame.get("morphs") or []
+    telem  = frame.get("telem")  or {}
+    norm   = {"nodes": nodes, "edges": edges, "morphs": morphs, "telem": telem}
+    if "digest" in frame:
+        norm["digest"] = frame["digest"]
+
+    # append to a simple log (one line per frame)
+    fid = str(uuid.uuid4())
     try:
-        guard_check(payload)
-    except Exception as e:
-        # return a clean validation-ish error instead of a 500
-        return JSONResponse({"ok": False, "error": str(e)}, status_code=422)
+        FRAMES_LOG.write_text(FRAMES_LOG.read_text() + json.dumps({
+            "t": int(time.time()), "id": fid, "frame": norm
+        }) + "\n", encoding="utf-8") if FRAMES_LOG.exists() else FRAMES_LOG.write_text(
+            json.dumps({"t": int(time.time()), "id": fid, "frame": norm}) + "\n", encoding="utf-8"
+        )
+    except Exception:
+        pass  # logging must never break the endpoint
 
-    # 4) minimal success echo; you can expand later
-    return {
-        "ok": True,
-        "accepted": True,
-        "telem": payload.get("telem", {}),
-        "stream_id": payload.get("stream_id"),
-    }
+    return _json({
+        "ok": True, "accepted": True, "id": fid,
+        "telem": telem, "counts": {"nodes": len(nodes), "edges": len(edges)}
+    })
