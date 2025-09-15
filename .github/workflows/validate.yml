@@ -24,44 +24,83 @@ jobs:
         run: |
           set -euo pipefail
           python - <<'PY'
-          import json, os, sys
+          import json, os, sys, glob
           from jsonschema import Draft7Validator
 
-          def load(p):
-            with open(p, "r", encoding="utf-8") as f:
-              return json.load(f)
+          def load_json(p):
+              with open(p, "r", encoding="utf-8") as f:
+                  return json.load(f)
+
+          def find_first(candidates):
+              for p in candidates:
+                  if os.path.exists(p):
+                      return p
+              return None
+
+          def check(schema_path, instance_path):
+              global ok
+              print(f"\n==> {instance_path} against {schema_path}")
+              try:
+                  schema = load_json(schema_path)
+                  inst   = load_json(instance_path)
+                  errs = sorted(
+                      Draft7Validator(schema).iter_errors(inst),
+                      key=lambda e: (list(e.path), e.message)
+                  )
+                  if not errs:
+                      print("OK")
+                  else:
+                      ok = False
+                      for e in errs:
+                          loc = "/".join(map(str, e.path)) or "(root)"
+                          print(f"FAIL: {loc}: {e.message}")
+              except FileNotFoundError as e:
+                  ok = False
+                  print(f"FAIL: missing file: {e.filename}")
+              except Exception as e:
+                  ok = False
+                  print(f"FAIL: {type(e).__name__}: {e}")
+
+          # Show JSON files we can see (helps on mobile)
+          print("Repo JSON files:")
+          for p in sorted(glob.glob("**/*.json", recursive=True)):
+              print("  ", p)
 
           ok = True
-          def check(schema_path, instance_path):
-            nonlocal ok
-            print(f"\n==> {instance_path} against {schema_path}")
-            try:
-              schema = load(schema_path)
-              inst = load(instance_path)
-              errs = sorted(Draft7Validator(schema).iter_errors(inst), key=lambda e: e.path)
-              if not errs:
-                print("OK")
-              else:
-                ok = False
-                for e in errs:
-                  loc = "/".join(map(str, e.path)) or "(root)"
-                  print(f"FAIL: {instance_path} :: {loc} :: {e.message}")
-            except FileNotFoundError as e:
-              ok = False
-              print(f"FAIL: missing file: {e.filename}")
-            except Exception as e:
-              ok = False
-              print(f"FAIL: {instance_path} :: {e}")
 
-          # vectors
-          check("schemas/receipt.schema.json", "schemas/vectors/receipt-min.json")
-          check("schemas/frame.schema.json", "schemas/vectors/frame-min.json")
+          # Candidate locations (root or under schemas/)
+          receipt_schema = find_first([
+              "schemas/receipt.schema.json", "receipt.schema.json"
+          ]) or "schemas/receipt.schema.json"
 
-          # Optional repo receipt
-          if os.path.exists("docs/receipt.latest.json"):
-            check("schemas/receipt.schema.json", "docs/receipt.latest.json")
+          frame_schema = find_first([
+              "schemas/frame.schema.json", "frame.schema.json"
+          ]) or "schemas/frame.schema.json"
+
+          receipt_vec = find_first([
+              "schemas/vectors/receipt-min.json",
+              "vectors/receipt-min.json",
+              "schemas/examples/receipt-min.json",
+          ]) or "schemas/vectors/receipt-min.json"
+
+          frame_vec = find_first([
+              "schemas/vectors/frame-min.json",
+              "vectors/frame-min.json",
+              "schemas/examples/frame-min.json",
+          ]) or "schemas/vectors/frame-min.json"
+
+          # Required vector checks
+          check(receipt_schema, receipt_vec)
+          check(frame_schema,   frame_vec)
+
+          # Optional repo receipt (if present)
+          repo_receipt = find_first([
+              "docs/receipt.latest.json", "receipt.latest.json"
+          ])
+          if repo_receipt:
+              check(receipt_schema, repo_receipt)
           else:
-            print("\n(skip) docs/receipt.latest.json not present")
+              print("\n(skip) no docs/receipt.latest.json")
 
           sys.exit(0 if ok else 1)
           PY
