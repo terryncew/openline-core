@@ -15,52 +15,26 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install deps
-        run: python -m pip install --upgrade pip jsonschema
-
-      - name: Validate receipts against schema
+      - name: Install jsonschema
         run: |
-          python - <<'PY'
-          import json, sys, pathlib, glob
-          from jsonschema import Draft202012Validator
+          python -m pip install --upgrade pip jsonschema
 
-          repo = pathlib.Path(__file__).resolve().parents[2]
-          schema_path = repo / "schemas" / "receipt.schema.json"
+      - name: Validate golden vectors
+        run: |
+          set -e
+          echo "Validating receipt-min.json against receipt.schema.json"
+          python -m jsonschema -i schemas/vectors/receipt-min.json schemas/receipt.schema.json
+          echo "Validating frame-min.json against frame.schema.json"
+          python -m jsonschema -i schemas/vectors/frame-min.json   schemas/frame.schema.json
+          echo "Golden vectors OK."
 
-          try:
-              schema = json.loads(schema_path.read_text(encoding="utf-8"))
-          except Exception as e:
-              print(f"::error file={schema_path}::Cannot read schema: {e}")
-              sys.exit(1)
-
-          validator = Draft202012Validator(schema)
-
-          # Files to check (skip gracefully if missing)
-          candidates = [
-              repo / "docs" / "receipt.latest.json",
-              *pathlib.Path(repo / "schemas" / "vectors").glob("receipt*.json"),
-          ]
-
-          rc = 0
-          for p in candidates:
-              if not p.exists():
-                  print(f"::warning file={p}::Missing file; skipped")
-                  continue
-              try:
-                  data = json.loads(p.read_text(encoding="utf-8"))
-              except Exception as e:
-                  print(f"::error file={p}::Invalid JSON: {e}")
-                  rc = 1
-                  continue
-
-              errs = list(validator.iter_errors(data))
-              if errs:
-                  for e in errs[:50]:
-                      loc = "/".join(map(str, e.path)) or "$"
-                      print(f"::error file={p}::{loc}: {e.message}")
-                  rc = 1
-              else:
-                  print(f"OK {p}")
-
-          sys.exit(rc)
-          PY
+      - name: Validate repo receipt if present
+        run: |
+          set -e
+          if [ -f docs/receipt.latest.json ]; then
+            echo "Validating docs/receipt.latest.json"
+            python -m jsonschema -i docs/receipt.latest.json schemas/receipt.schema.json
+            echo "docs/receipt.latest.json OK."
+          else
+            echo "No docs/receipt.latest.json; skipping."
+          fi
