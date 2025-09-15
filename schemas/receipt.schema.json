@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "OpenLine Receipt v0.1",
+  "type": "object",
+  "required": ["claim", "because", "but", "so", "telem", "threshold", "model"],
+  "properties": {
+    "claim": { "type": "string", "minLength": 1 },
+    "because": { "type": "array", "items": { "type": "string" } },
+    "but": { "type": "array", "items": { "type": "string" } },
+    "so": { "type": "string" },
+    "telem": {
+      "type": "object",
+      "properties": { "delta_scale": { "type": "number" } },
+      "additionalProperties": true
+    },
+    "threshold": { "type": "number" },
+    "model": { "type": "string" },
+    "attrs": { "type": "object", "additionalProperties": true }
+  },
+  "additionalProperties": true
+}
