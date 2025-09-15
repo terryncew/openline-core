@@ -1,10 +1,10 @@
 {
-  "claim": "SPY likely up tomorrow",
-  "because": ["Reflex loop coherence stayed within band", "30d minute context"],
-  "but": ["Scale drift \u0394_scale = 0.028 (min\u2194hour)"],
-  "so": "Within 3% tolerance \u2014 recheck at close",
-  "telem": { "delta_scale": 0.028 },
+  "claim": "Schema smoke test",
+  "because": ["vector check"],
+  "but": [],
+  "so": "ok",
+  "telem": { "delta_scale": 0.0 },
   "threshold": 0.03,
-  "model": "coherence/reflex-loop",
+  "model": "openline-core/test",
   "attrs": { "cadence": "day" }
 }
