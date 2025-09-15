@@ -1,21 +1,10 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "OpenLine Receipt v0.1",
-  "type": "object",
-  "required": ["claim", "because", "but", "so", "telem", "threshold", "model"],
-  "properties": {
-    "claim": { "type": "string", "minLength": 1 },
-    "because": { "type": "array", "items": { "type": "string" } },
-    "but": { "type": "array", "items": { "type": "string" } },
-    "so": { "type": "string" },
-    "telem": {
-      "type": "object",
-      "properties": { "delta_scale": { "type": "number" } },
-      "additionalProperties": true
-    },
-    "threshold": { "type": "number" },
-    "model": { "type": "string" },
-    "attrs": { "type": "object", "additionalProperties": true }
-  },
-  "additionalProperties": true
+  "claim": "SPY likely up tomorrow",
+  "because": ["Reflex loop coherence stayed within band", "30d minute context"],
+  "but": ["Scale drift \u0394_scale = 0.028 (min\u2194hour)"],
+  "so": "Within 3% tolerance \u2014 recheck at close",
+  "telem": { "delta_scale": 0.028 },
+  "threshold": 0.03,
+  "model": "coherence/reflex-loop",
+  "attrs": { "cadence": "day" }
 }
