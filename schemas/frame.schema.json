@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Frame",
+  "type": "object",
+  "required": ["stream_id", "t_logical", "nodes"],
+  "properties": {
+    "stream_id": { "type": "string" },
+    "t_logical": { "type": "number" },
+    "gauge": { "type": "string" },
+    "units": { "type": "string" },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "label"],
+        "properties": {
+          "id": { "type": "string" },
+          "type": { "type": "string" },
+          "label": { "type": "string" },
+          "weight": { "type": "number" },
+          "attrs": { "type": "object" }
+        }
+      }
+    },
+    "edges": { "type": "array" },
+    "morphs": { "type": "array" },
+    "telem": { "type": "object" }
+  },
+  "additionalProperties": true
+}
