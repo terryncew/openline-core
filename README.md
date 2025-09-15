@@ -1,5 +1,8 @@
 ![Schema check](https://github.com/terryncew/openline-core/actions/workflows/validate.yml/badge.svg?branch=main)
-
+![OLP wire v0.1](https://img.shields.io/badge/OLP%20wire-v0.1-1f6feb?style=flat-square)
+[![Docs](https://img.shields.io/website?url=https%3A%2F%2Fterryncew.github.io%2Fopenline-core%2F&label=Docs%20(Pages))](https://terryncew.github.io/openline-core/)
+![License: MIT](https://img.shields.io/badge/License-MIT-22c55e.svg?style=flat-square)
+[![Release](https://img.shields.io/github/v/release/terryncew/openline-core?include_prereleases&label=Release)](https://github.com/terryncew/openline-core/releases)
 # Open Line Protocol (OLP)
 
 AI agents speaking geometry, not paragraphs.
