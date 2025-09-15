@@ -1,0 +1,10 @@
+{
+  "claim": "Schema smoke test",
+  "because": ["vector check"],
+  "but": [],
+  "so": "ok",
+  "telem": { "delta_scale": 0.0 },
+  "threshold": 0.03,
+  "model": "openline-core/test",
+  "attrs": { "cadence": "day" }
+}
