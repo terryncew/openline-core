@@ -1,3 +1,5 @@
+![Schema check](https://github.com/terryncew/openline-core/actions/workflows/validate.yml/badge.svg?branch=main)
+
 # Open Line Protocol (OLP)
 
 AI agents speaking geometry, not paragraphs.
