@@ -1,10 +1,17 @@
 {
-  "claim": "Schema smoke test",
-  "because": ["vector check"],
-  "but": [],
-  "so": "ok",
-  "telem": { "delta_scale": 0.0 },
-  "threshold": 0.03,
-  "model": "openline-core/test",
-  "attrs": { "cadence": "day" }
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Receipt",
+  "type": "object",
+  "required": ["claim", "because", "so", "model"],
+  "properties": {
+    "claim": { "type": "string" },
+    "because": { "type": "array", "items": { "type": "string" } },
+    "but": { "type": "array", "items": { "type": "string" } },
+    "so": { "type": "string" },
+    "telem": { "type": "object" },
+    "threshold": { "type": "number" },
+    "model": { "type": "string" },
+    "attrs": { "type": "object" }
+  },
+  "additionalProperties": true
 }
