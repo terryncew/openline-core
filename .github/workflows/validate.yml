@@ -3,7 +3,7 @@ name: Schema check
 on:
   push:
     branches: [ "main" ]
-  pull_request:
+  workflow_dispatch:
 
 jobs:
   validate:
@@ -15,26 +15,53 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install jsonschema
+      - name: Install deps
         run: |
-          python -m pip install --upgrade pip jsonschema
+          python -m pip install --upgrade pip
+          python -m pip install jsonschema==4.22.0
 
-      - name: Validate golden vectors
+      - name: Validate vectors (and optional receipt)
         run: |
-          set -e
-          echo "Validating receipt-min.json against receipt.schema.json"
-          python -m jsonschema -i schemas/vectors/receipt-min.json schemas/receipt.schema.json
-          echo "Validating frame-min.json against frame.schema.json"
-          python -m jsonschema -i schemas/vectors/frame-min.json   schemas/frame.schema.json
-          echo "Golden vectors OK."
+          set -euo pipefail
+          python - <<'PY'
+          import json, os, sys
+          from jsonschema import Draft7Validator
 
-      - name: Validate repo receipt if present
-        run: |
-          set -e
-          if [ -f docs/receipt.latest.json ]; then
-            echo "Validating docs/receipt.latest.json"
-            python -m jsonschema -i docs/receipt.latest.json schemas/receipt.schema.json
-            echo "docs/receipt.latest.json OK."
-          else
-            echo "No docs/receipt.latest.json; skipping."
-          fi
+          def load(p):
+            with open(p, "r", encoding="utf-8") as f:
+              return json.load(f)
+
+          ok = True
+          def check(schema_path, instance_path):
+            nonlocal ok
+            print(f"\n==> {instance_path} against {schema_path}")
+            try:
+              schema = load(schema_path)
+              inst = load(instance_path)
+              errs = sorted(Draft7Validator(schema).iter_errors(inst), key=lambda e: e.path)
+              if not errs:
+                print("OK")
+              else:
+                ok = False
+                for e in errs:
+                  loc = "/".join(map(str, e.path)) or "(root)"
+                  print(f"FAIL: {instance_path} :: {loc} :: {e.message}")
+            except FileNotFoundError as e:
+              ok = False
+              print(f"FAIL: missing file: {e.filename}")
+            except Exception as e:
+              ok = False
+              print(f"FAIL: {instance_path} :: {e}")
+
+          # vectors
+          check("schemas/receipt.schema.json", "schemas/vectors/receipt-min.json")
+          check("schemas/frame.schema.json", "schemas/vectors/frame-min.json")
+
+          # Optional repo receipt
+          if os.path.exists("docs/receipt.latest.json"):
+            check("schemas/receipt.schema.json", "docs/receipt.latest.json")
+          else:
+            print("\n(skip) docs/receipt.latest.json not present")
+
+          sys.exit(0 if ok else 1)
+          PY
