@@ -1,0 +1,31 @@
+name: Schema check
+on:
+  push: { branches: [main] }
+  pull_request: { branches: [main] }
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: python -m pip install --quiet jsonschema
+      - name: Validate vectors
+        run: |
+          python - <<'PY'
+          import json,sys
+          from jsonschema import validate
+          schema=json.load(open('schemas/receipt.schema.json'))
+          vectors=['schemas/vectors/receipt-min.json']
+          ok=True
+          for v in vectors:
+              try:
+                  data=json.load(open(v))
+                  validate(data, schema)
+                  print('[ok]', v)
+              except Exception as e:
+                  ok=False
+                  print('[fail]', v, e)
+          sys.exit(0 if ok else 1)
+          PY
