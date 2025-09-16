@@ -1,3 +1,4 @@
+[![OpenLine-compatible](https://img.shields.io/badge/OpenLine-compatible-v0.1-1f6feb)](https://github.com/terryncew/openline-core)
 ![Schema check](https://github.com/terryncew/openline-core/actions/workflows/validate.yml/badge.svg?branch=main)
 ![OLP wire v0.1](https://img.shields.io/badge/OLP%20wire-v0.1-1f6feb?style=flat-square)
 [![Docs](https://img.shields.io/website?url=https%3A%2F%2Fterryncew.github.io%2Fopenline-core%2F&label=Docs%20(Pages))](https://terryncew.github.io/openline-core/)
@@ -237,4 +238,10 @@ python examples/send_frame.py
 
 You should see a JSON reply with ok: true and a digest.
 
+cff-version: 1.2.0
+title: Open Line Protocol (OLP)
+message: Cite this software if you use OLP.
+authors: [{ family-names: White, given-names: Terrynce }]
+version: 0.1.0
+url: https://github.com/terryncew/openline-core
 
