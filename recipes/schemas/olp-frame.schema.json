@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openline.dev/schema/olp-frame.schema.json",
+  "title": "OpenLine Frame v0.1",
+  "type": "object",
+  "required": ["id","ts","agent","nodes","edges","telemetry"],
+  "properties": {
+    "id": {"type": "string"},
+    "ts": {"type": "string", "format": "date-time"},
+    "agent": {"type": "string"},
+    "nodes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id","type","text"],
+        "properties": {
+          "id": {"type": "string"},
+          "type": {"type":"string","enum":["Claim","Evidence","Question","Action","Observation"]},
+          "text": {"type": "string"},
+          "meta": {"type":"object","additionalProperties":true}
+        },
+        "additionalProperties": false
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["from","to","type"],
+        "properties": {
+          "from": {"type": "string"},
+          "to": {"type": "string"},
+          "type": {"type":"string","enum":["supports","contradicts","elaborates","causes","refutes"]},
+          "meta": {"type":"object","additionalProperties":true}
+        },
+        "additionalProperties": false
+      }
+    },
+    "telemetry": {
+      "type": "object",
+      "required": ["shape","holonomy"],
+      "properties": {
+        "shape": {
+          "type": "array",
+          "items": {"type":"number"},
+          "minItems": 5,
+          "maxItems": 5
+        },
+        "holonomy": {"type": "number"}
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}
