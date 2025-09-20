@@ -1,0 +1,17 @@
+name: OLP frame schema check
+on: { workflow_dispatch: {} }
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: python -m pip install --upgrade pip jsonschema
+      - name: Validate sample frame (if present)
+        run: |
+          if [ -f recipes/validate.py ] && [ -f recipes/schemas/olp-frame.schema.json ] && [ -f docs/example.frame.olp.json ]; then
+            python recipes/validate.py docs/example.frame.olp.json
+          else
+            echo "No sample frame to validate (this is OK)."
+          fi
