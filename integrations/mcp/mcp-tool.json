@@ -1,0 +1,22 @@
+{
+  "name": "openline",
+  "version": "0.1.0",
+  "description": "OpenLine receipt tool: validate an OLP frame and emit a receipt.",
+  "tools": [
+    {
+      "name": "stitch",
+      "description": "Validate an OLP frame and return a receipt with digest/telemetry.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "frame": {
+            "type": "object",
+            "description": "OpenLine frame (nodes, edges, optional telemetry)"
+          }
+        },
+        "required": ["frame"],
+        "additionalProperties": false
+      }
+    }
+  ]
+}
