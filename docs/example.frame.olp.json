@@ -1,0 +1,15 @@
+{
+  "id": "frame-001",
+  "ts": "2025-09-20T17:00:00Z",
+  "agent": "demo-agent@openline",
+  "nodes": [
+    {"id": "c1", "type": "Claim", "text": "Solar + storage lowers peak costs"},
+    {"id": "e1", "type": "Evidence", "text": "CAISO duck curve shows peak spikes"},
+    {"id": "q1", "type": "Question", "text": "What is payback under TOU?"}
+  ],
+  "edges": [
+    {"from": "e1", "to": "c1", "type": "supports"},
+    {"from": "q1", "to": "c1", "type": "elaborates"}
+  ],
+  "telemetry": { "shape": [3,2,0.3333,0,0], "holonomy": 0 }
+}
