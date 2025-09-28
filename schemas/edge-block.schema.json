@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "OpenLine Edge Telemetry v1.0",
+  "type": "object",
+  "properties": {
+    "id": {"type": "string"},
+    "latency_ms": {"type": "number"},
+    "tool_latency_ms": {"type": "number"},
+    "schema_check": {"type": "object"},
+    "pii_scan": {"type": "object"},
+    "topic_adherence": {"type": "object"},
+    "loop_guard": {"type": "object"},
+    "tokens": {"type": "object"},
+    "guardrails": {"type": "array"},
+    "tool_call": {"type": "object"}
+  },
+  "additionalProperties": true
+}
