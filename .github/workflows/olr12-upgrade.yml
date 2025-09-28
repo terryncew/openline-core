@@ -1,0 +1,64 @@
+name: Upgrade receipt → OLR v1.2 fields
+on: { workflow_dispatch: {} }
+permissions: { contents: write }
+
+jobs:
+  olr12:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Attach OLR v1.2 blocks
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          P = Path("docs/receipt.latest.json")
+          if not P.exists():
+              print("[skip] docs/receipt.latest.json not found"); raise SystemExit(0)
+          r = json.loads(P.read_text("utf-8"))
+          def load(p):
+              p = Path(p)
+              if p.exists():
+                  try: return json.loads(p.read_text("utf-8"))
+                  except: pass
+              return None
+          r.setdefault("receipt_version","olr/1.2")
+          evo = load("docs/training.log.jsonl")
+          if isinstance(evo,list):
+              losses = [e.get("loss") for e in evo if isinstance(e,dict) and "loss" in e]
+              diffs = [losses[i+1]-losses[i] for i in range(len(losses)-1)] if len(losses)>1 else []
+              inflections = sum(1 for i in range(1,len(diffs)) if diffs[i-1]*diffs[i] < 0)
+              largest_jump = max((abs(d) for d in diffs), default=0.0)
+              flips = sum(1 for e in evo if isinstance(e,dict) and e.get("policy_flip") is True)
+              r["training_evolution"] = {
+                "loss_trajectory_shape":{"monotone": all(d<=0 for d in diffs),
+                  "inflections":inflections,"largest_jump":round(largest_jump,4)},
+                "policy_flips_per_epoch":flips
+              }
+          geom = load("docs/geometry.json")
+          if isinstance(geom,list): r["geometry_attestation"] = geom
+          pm = load("docs/edge_metrics.jsonl")
+          if isinstance(pm,list) and len(pm)>=3:
+              try:
+                  k=[x.get("kappa") for x in pm[-3:] if isinstance(x,dict)]
+                  v=[x.get("variance") for x in pm[-7:] if isinstance(x,dict)]
+                  d=[x.get("drift_rate") for x in pm[-3:] if isinstance(x,dict)]
+                  base=sum(v[:-1])/max(1,len(v)-1) if len(v)>1 else 0.0
+                  ind={}
+                  ind["kappa_accel"]=(k[-1]-2*k[-2]+k[-3]) if len(k)==3 and all(isinstance(t,(int,float)) for t in k) else 0.0
+                  ind["variance_spike"]=0.0 if base<=0 else (v[-1]-base)/base
+                  ind["drift_speedup"]=abs(d[-1]-d[-2]) if len(d)==3 and all(isinstance(t,(int,float)) for t in d) else 0.0
+                  r["prebreach_indicators"]={k:round(v,4) for k,v in ind.items()}
+              except: pass
+          dtopo = load("docs/defects.json")
+          if isinstance(dtopo,dict): r["defect_topology"]=dtopo
+          P.write_text(json.dumps(r,indent=2),encoding="utf-8")
+          print("[ok] upgraded → OLR v1.2 blocks attached")
+          PY
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: attach OLR v1.2 blocks to receipt.latest.json"
+          file_pattern: docs/receipt.latest.json
