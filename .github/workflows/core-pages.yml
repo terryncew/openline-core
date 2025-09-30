@@ -1,0 +1,103 @@
+name: openline-core Pages (frame demo)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "examples/**"
+      - "adapters/**"
+      - "docs/**"
+      - ".github/workflows/core-pages.yml"
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: olc-pages
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Ensure dirs
+        run: |
+          mkdir -p artifacts docs
+
+      - name: Run frame demo (if present)
+        run: |
+          if [ -f examples/build_frame_from_text.py ]; then
+            python examples/build_frame_from_text.py "The treatment reduces mortality. Because two RCTs report HR<0.8, confidence is moderate. However, a re-analysis suggests measurement bias. According to https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12345, results replicate."
+          else
+            echo '{}' > artifacts/frame.json
+          fi
+
+      - name: Seed docs (index + frame.json) if missing
+        run: |
+          cp -f artifacts/frame.json docs/frame.json || echo '{}' > docs/frame.json
+          if [ ! -f docs/index.html ]; then
+            cat > docs/index.html <<'HTML'
+<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>openline-core · frame demo</title>
+<style>
+  :root{--bg:#0b0b0f;--fg:#e8e8f0;--mut:#9aa0aa;--tile:#14161b}
+  body{margin:0;padding:24px;font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto;background:var(--bg);color:var(--fg)}
+  .tile{background:var(--tile);border-radius:10px;padding:14px;max-width:980px}
+  .muted{color:var(--mut)}
+  pre{white-space:pre-wrap;word-break:break-word;font:12px ui-monospace,Menlo,Consolas,monospace}
+</style>
+<h1>openline-core · frame demo</h1>
+<div class="tile">
+  <div class="muted">artifacts/frame.json → docs/frame.json</div>
+  <div id="metrics" style="margin:8px 0 10px 0"></div>
+  <pre id="out">Loading…</pre>
+</div>
+<script>
+(async()=>{
+  try{
+    const r = await fetch('./frame.json?'+Date.now()); if(!r.ok) throw new Error('no frame');
+    const j = await r.json();
+    const t = j.telem || {};
+    const d = j.digest || {};
+    const el = document.getElementById('metrics');
+    const num = x => Number.isFinite(+x) ? (+x).toFixed(3) : '—';
+    el.innerHTML = `φ_topo <b>${num(t.phi_topo)}</b> · φ_sem <b>${num(t.phi_sem)}</b> · κ <b>${num(t.kappa_eff)}</b> · Δhol <b>${num(t.delta_hol)}</b> · C <b>${d.cycle_plus??0}</b> · X <b>${d.x_frontier??0}</b>`;
+    document.getElementById('out').textContent = JSON.stringify(j, null, 2);
+  }catch(e){
+    document.getElementById('out').textContent = 'No frame.json found';
+  }
+})();
+</script>
+HTML
+          fi
+
+      - name: Commit docs (if changed)
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A docs
+          if ! git diff --cached --quiet; then
+            git commit -m "docs(core): update frame + index [skip ci]"
+            git push
+          else
+            echo "No changes"
+          fi
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: docs }
+      - id: deployment
+        uses: actions/deploy-pages@v4
