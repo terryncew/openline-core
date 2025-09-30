@@ -1,0 +1,14 @@
+{
+  "version": "0.2",
+  "guards": {
+    "red": { "delta_hol": 0.50, "x_frontier": 7, "cycle_plus": 4 },
+    "amber": { "kappa_eff": 0.70, "jsd_ewma": 0.10, "x_frontier_min": 3, "cycle_plus_min": 2 },
+    "block_conf_min": 0.60
+  },
+  "weights": {
+    "phi_topo": { "a1": 0.40, "a2": 0.20, "a3": 0.35, "a4": 0.25, "a5": 0.30 },
+    "rho": { "zL": 0.45, "Hs": 0.35, "r": 0.20 },
+    "S_star": { "phi_topo": 0.45, "phi_sem": 0.45, "penalty": 0.10 }
+  },
+  "kappa": { "gain": 1.4, "relief": 0.30 }
+}
