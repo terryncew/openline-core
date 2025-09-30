@@ -200,9 +200,3 @@ A: COLE monitors single-agent behavior over time. OLP is for multi-agent coordin
 
 **OpenLine makes agent reasoning auditable.**  
 The protocol is simple. The hard part is getting agents to use it well.
-
-```
-
-
-
-
