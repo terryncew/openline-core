@@ -1,0 +1,57 @@
+name: ACP → COLE (dispatch)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - "examples/acp_checkout_demo.py"
+      - ".github/workflows/acp-to-cole.yml"
+
+permissions:
+  contents: read
+
+env:
+  TARGET_REPO: terryncew/COLE-Coherence-Layer-Engine-
+
+jobs:
+  demo-and-dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+
+      # Run demo if present; otherwise emit a safe stub
+      - name: Build ACP result artifact
+        run: |
+          mkdir -p artifacts
+          if [ -f examples/acp_checkout_demo.py ]; then
+            python examples/acp_checkout_demo.py || true
+          fi
+          if [ ! -f artifacts/acp_result.json ]; then
+            cat > artifacts/acp_result.json <<'JSON'
+{"flow_id":"acp_flow_demo_001","psp":"stripe","merchant_id":"acct_xxx","token_ref":"sptkn_xxx","sku":"tee-deluxe-large-black","qty":1,"subtotal":26.00,"currency":"USD","status":"initiated"}
+JSON
+          fi
+          jq . artifacts/acp_result.json
+
+      - name: Prepare payload
+        id: prep
+        run: |
+          B64=$(jq -c . artifacts/acp_result.json | base64 | tr -d '\n')
+          echo "::add-mask::$B64"
+          echo "acp_b64=$B64" >> "$GITHUB_OUTPUT"
+
+      # Requires a fine-grained PAT secret in this repo: COLE_DISPATCH_TOKEN (scoped to COLE repo, Contents: Read/Write)
+      - name: Dispatch to COLE
+        env:
+          TOKEN: ${{ secrets.COLE_DISPATCH_TOKEN }}
+          PAYLOAD: ${{ steps.prep.outputs.acp_b64 }}
+          TARGET:  ${{ env.TARGET_REPO }}
+        run: |
+          curl -sS -X POST \
+            -H "Authorization: token ${TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${TARGET}/dispatches \
+            -d "{\"event_type\":\"acp_result\",\"client_payload\":{\"acp_b64\":\"${PAYLOAD}\"}}"
