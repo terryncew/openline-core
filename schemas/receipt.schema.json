@@ -1,17 +1,39 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Receipt",
+  "title": "COLE receipt v0.2",
   "type": "object",
-  "required": ["claim", "because", "so", "model"],
   "properties": {
-    "claim": { "type": "string" },
-    "because": { "type": "array", "items": { "type": "string" } },
-    "but": { "type": "array", "items": { "type": "string" } },
-    "so": { "type": "string" },
-    "telem": { "type": "object" },
-    "threshold": { "type": "number" },
-    "model": { "type": "string" },
-    "attrs": { "type": "object" }
-  },
-  "additionalProperties": true
+    "claim": {"type":["string","null"]},
+    "because": {"type":"array","items":{"type":"string"}},
+    "but": {"type":"array","items":{"type":"string"}},
+    "so": {"type":["string","null"]},
+
+    "temporal": {
+      "type":"object",
+      "properties": {
+        "latest": {
+          "type":"object",
+          "properties": {
+            "kappa": {"type":"number"},
+            "delta_hol": {"type":"number"},
+            "jsd": {"type":["number","null"]}
+          }
+        },
+        "novelty_budget": {"type":"object"}
+      }
+    },
+    "identity": { "type":"object" },
+    "narrative": {
+      "type":"object",
+      "properties": {
+        "continuity": {
+          "type":"object",
+          "properties": {
+            "cycles_C": {"type":"integer"},
+            "contradictions_X": {"type":"integer"}
+          }
+        }
+      }
+    }
+  }
 }
