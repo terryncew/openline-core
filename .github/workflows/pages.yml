@@ -1,22 +1,40 @@
 name: OpenLine Docs → Pages
+
 on:
   push:
     branches: [ main ]
   workflow_dispatch:
+
 permissions:
+  contents: read
   pages: write
   id-token: write
+
 concurrency:
   group: "ol-pages"
   cancel-in-progress: false
+
 jobs:
   deploy:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
+    # 👇 this fixes “Missing environment” (required by deploy-pages@v4)
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          path: docs
-      - uses: actions/deploy-pages@v4
+          path: docs   # make sure this folder exists in the repo
+
+      - name: Deploy to Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
