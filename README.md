@@ -114,6 +114,8 @@ Different models, same invariants. Coord-free, conflict-aware collaboration.
 uv sync && uv run examples/quickstart.py
 
 # Run server alone
+uv run olp-server  # preferred (if entrypoint is defined)
+# or
 uv run uvicorn openline.adapters.fastapi_app:app --port 8088
 
 # Send frames from another shell
@@ -212,7 +214,7 @@ Planned: signed releases & checksums (see <SECURITY.md>).
 
 ## License
 
-MIT (see <LICENSE>). Do what you want, credit the project, no warranties.
+MIT — see [LICENSE](./LICENSE). Do what you want, credit the project, no warranties.
 
 -----
 
