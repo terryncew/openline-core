@@ -6,197 +6,257 @@
 [![Docs](https://img.shields.io/website?url=https%3A%2F%2Fterryncew.github.io%2Fopenline-core%2F&label=Docs%20(Pages))](https://terryncew.github.io/openline-core/)
 ![License: MIT](https://img.shields.io/badge/License-MIT-22c55e.svg?style=flat-square)
 
-**Status: Experimental protocol for multi-agent coordination**
+**AI agents speaking geometry, not paragraphs.**
 
-OLP is a structured wire format for AI agents to exchange reasoning graphs instead of unstructured text. The goal: make agent plans auditable, merges conflict-aware, and changes explicit.
+OLP sends small graphs (the shape) plus smooth updates (the liquid). That makes plans auditable, merges conflict-aware, and changes explicit.
 
-## What Problem Does This Solve?
+-----
 
-When multiple AI agents collaborate (or when one agent reasons over time), they typically exchange raw text. This makes it hard to:
-- **Audit reasoning**: Which claims depend on which evidence?
-- **Detect contradictions**: Are we asserting X and ¬X simultaneously?
-- **Track changes**: What actually changed between reasoning steps?
-- **Prevent loops**: Are we using our conclusion to prove our premise?
+## What You Get
 
-OLP addresses this by having agents send **graphs** (nodes = claims/evidence/counters, edges = supports/contradicts/depends) with **structural fingerprints** that make these problems detectable.
+- **Frozen wire (v0.1)** — Typed schema you can depend on
+- **Guards** — Stop self-licking loops, silent deletions, order-debt spikes
+- **Digest** — 5-number “shape fingerprint” + Δ_hol holonomy gap
+- **Telemetry** — Coherence, curvature, commutator—so agents auto-throttle
+- **One-command demo** — Up in seconds; extend in minutes
 
-## Core Idea
-
-Instead of:
-```
-
-“I think X because Y, but Z is a concern, so we should do W”
-
-```
-Agents send:
-```json
-{
-  "nodes": [
-    {"id":"C1", "type":"Claim", "label":"X"},
-    {"id":"E1", "type":"Evidence", "label":"Y"},
-    {"id":"Ct1", "type":"Counter", "label":"Z"},
-    {"id":"P1", "type":"PlanStep", "label":"W"}
-  ],
-  "edges": [
-    {"src":"E1", "dst":"C1", "rel":"supports"},
-    {"src":"Ct1", "dst":"C1", "rel":"contradicts"},
-    {"src":"C1", "dst":"P1", "rel":"derives"}
-  ],
-  "digest": {"b0":1, "cycle_plus":0, "x_frontier":1, ...}
-}
-```
-
-## What’s Actually Measured
-
-The **5-number digest** tracks graph topology:
-
-- **b₀**: Connected components (1 = unified reasoning, >1 = disconnected arguments)
-- **cycle_plus**: Support cycles (do we use claim A to prove claim A?)
-- **x_frontier**: Unresolved contradictions (claims with active Counter nodes)
-- **s_over_c**: Support-to-contradiction ratio
-- **depth**: Longest dependency chain (deep chains are fragile)
-
-The **holonomy gap (Δ_hol)** measures how much the digest changed after an operation. Large spikes suggest “smoothing over” structural problems.
-
-## Guards (What Gets Rejected)
-
-The server enforces three rules:
-
-1. **cycle_plus ≤ 4**: Prevents circular reasoning
-1. **x_frontier can only decrease via resolution**: You can’t just delete contradictions; you must address them with Assumption or Counter nodes
-1. **Δ_hol spikes require explanation**: Large structural changes need new nodes justifying them
-
-These are **heuristics**, not proofs of correctness. They catch common failure modes.
-
-## Design Metaphors vs. Actual Implementation
-
-OpenLine borrows terminology from differential geometry and topology:
-
-- **“Holonomy gap”**: Borrowed from parallel transport in curved spaces. Here it’s just `||digest_after - digest_before||₁` (L1 norm of digest changes). Useful as a delta metric, not a literal geometric measurement.
-- **“Curvature” (kappa_eff)**: Heuristic for reasoning stress, not Ricci curvature.
-- **“Coherence” (phi_sem, phi_topo)**: Computed from node weights and edge patterns, not information-theoretic mutual information.
-
-The metaphors guide design decisions about what to measure. The actual measurements are graph statistics.
+-----
 
 ## Quick Start
 
 ```bash
-# Install dependencies
-uv sync
-
-# Run demo server
-uv run examples/quickstart.py
+# Python 3.11+ and uv installed
+uv sync && uv run examples/quickstart.py
 ```
 
-Server runs at `http://127.0.0.1:8088/frame`
+**Server:** `http://127.0.0.1:8088/frame` (FastAPI)
 
-Send a frame:
+Each posted Frame is re-digested and guard-checked.
+
+### Example Request
 
 ```bash
-curl -X POST http://127.0.0.1:8088/frame \
-  -H 'Content-Type: application/json' \
-  -d @examples/sample_frame.json
+curl -s -X POST http://127.0.0.1:8088/frame \
+  -H 'Content-Type: application/json' -d '{
+  "stream_id": "demo-1",
+  "t_logical": 1,
+  "gauge": "sym",
+  "units": "confidence:0..1,cost:tokens",
+  "nodes": [
+    {"id":"C1","type":"Claim","label":"Bullets silence","weight":0.78},
+    {"id":"E1","type":"Evidence","label":"No motive yet","weight":0.90}
+  ],
+  "edges": [{"src":"E1","dst":"C1","rel":"supports","weight":0.90}],
+  "digest": {"b0":1,"cycle_plus":0,"x_frontier":0,"s_over_c":1.0,"depth":0},
+  "morphs": [],
+  "telem": {"phi_sem":0.72,"phi_topo":0.66,"delta_hol":0.0,"kappa_eff":0.30,
+    "commutator":0.0,"cost_tokens":0,"da_drift":0.0},
+  "signature": null
+}'
 ```
 
-## Wire Format (v0.1)
+**Response:** `{ok: true, digest, telem}` or HTTP 422 with guard error
 
-**Nodes**: `Claim | Evidence | Counter | Assumption | Constraint | PlanStep | Outcome | Principle | Motif`
+-----
 
-**Edges**: `supports | contradicts | depends_on | derives | updates | instantiates | illustrates`
+## The Frame Schema
 
-**Operations**: `add_node | del_node | add_edge | del_edge | retype | reweight | merge | split | homotopy`
+### Nodes
 
-Full schema: [`openline/schema.py`](openline/schema.py)
+`Claim` | `Evidence` | `Counter` | `Assumption` | `Constraint` | `PlanStep` | `Outcome` | `Principle` | `Motif`
 
-## Architecture
+### Edges
+
+`supports` | `contradicts` | `depends_on` | `derives` | `updates` | `instantiates` | `illustrates`
+
+### Digest (5-number fingerprint)
+
+- **b₀** (components) — Are we one connected argument or many islands?
+- **cycle_plus** (support cycles) — Are we starting to “prove ourselves with ourselves”?
+- **x_frontier** (live contradictions) — How many live contradictions remain?
+- **s_over_c** (support:contradiction) — Is support outrunning contradiction?
+- **depth** (longest dependency chain) — How deep is the dependency chain (fragility risk)?
+
+### Holonomy Gap
+
+**Δ_hol** = ||digest_post − digest_pre||₁ (order-debt across a loop)
+
+### Telemetry
+
+`phi_sem`, `phi_topo`, `delta_hol`, `kappa_eff`, `commutator`, `cost_tokens`, `da_drift`
+
+-----
+
+## Guards (what they prevent)
+
+- **cycle_plus > cap** (default 4) — Self-reinforcing myths
+- **x_frontier drops by deletion only** — Must resolve via Assumption/Counter; silent objection erasure
+- **Δ_hol spikes without explanatory node** — “Too-clean” rewrites measured on a bent prior
+
+These prevent self-reinforcing myths, silent objection erasure, and “too-clean” rewrites.
+
+-----
+
+## The Coordination Pattern
+
+**SYNC** (prior skeleton) → **MEASURE** (probe morphs) → **STITCH** (commit or targeted counter-morph)
+
+Different models, same invariants. Coord-free, conflict-aware collaboration.
+
+-----
+
+## Installation & Usage
+
+### Run the demo
+
+```bash
+# Install dependencies and run demo
+uv sync && uv run examples/quickstart.py
+
+# Run server alone
+uv run uvicorn openline.adapters.fastapi_app:app --port 8088
+
+# Send frames from another shell
+uv run examples/demo_client.py
+```
+
+### Run tests & checks
+
+```bash
+uv run ruff check .
+uv run mypy openline
+uv run pytest -q --cov=openline
+```
+
+-----
+
+## Project Structure
 
 ```
 openline/
-├── schema.py         # Pydantic models (frozen v0.1 wire)
-├── digest.py         # 5-number fingerprint computation
-├── guards.py         # Cycle/contradiction/delta checks
-├── telem.py          # Coherence/curvature heuristics
-├── crypto.py         # Witness marks (Merkle, signatures)
-└── adapters/
-    ├── fastapi_app.py    # HTTP server
-    └── stitch_bridge.py  # Integration with Stitch scheduler
+├── README.md
+├── pyproject.toml
+├── openline/
+│   ├── schema.py           # OLP v0.1 Pydantic models (frozen wire)
+│   ├── digest.py           # 5-number digest + Δ_hol
+│   ├── guards.py           # guard checks
+│   ├── telem.py            # coherence/curvature calculators
+│   ├── crypto.py           # witness marks (Merkle/sign)
+│   └── adapters/
+│       ├── fastapi_app.py  # HTTP bus
+│       └── stitch_bridge.py # Stitch Scheduler → Frame mapping
+├── examples/
+│   ├── quickstart.py       # one-command demo
+│   └── demo_client.py      # SYNC→MEASURE→STITCH sample
+└── tests/
+    ├── test_digest.py
+    ├── test_guards.py
+    └── test_wire.py
 ```
 
-## What This Doesn’t Do
+-----
 
-- **Prove logical validity**: Guards catch structural problems, not semantic errors
-- **Guarantee agent reliability**: This is infrastructure for auditing, not a correctness proof
-- **Replace prompting**: Agents still need good prompts to generate coherent frames
-- **Work automatically**: You need to build agent logic that produces OLP frames
+## Ship-grade fundamentals
 
-## Validation Status
+- **One-command magic** — Demo runs in a single line
+- **Frozen wire** — OLP v0.1 is versioned and backward-compatible
+- **Small, sharp core** — Protocol, digest, guards, bus. Everything else plugs in
+- **Observability baked-in** — Structured logs + OTel hooks
+- **Production hygiene** — Types, lint, tests, coverage gates in CI
+- **Explicit failure modes** — Actionable guard errors, no silent corruption
 
-**Tested**: Schema validation, digest computation, guard logic  
-**Untested**: Whether this actually improves multi-agent coordination in practice
+-----
 
-This is research infrastructure. It’s working code, but the hypothesis (structured graphs improve agent reliability) needs empirical demonstration.
+## API
 
-## Use Cases (Hypothetical)
+```
+POST /frame  # Submit a Frame
+→ {ok, digest, telem} or HTTP 422 with guard error
+```
 
-- **Multi-agent debate**: Agents exchange claim/counter graphs
-- **RAG planning**: Break retrieval+reasoning into auditable steps
-- **Tool orchestration**: Track which tool calls depend on which results
-- **Version control for reasoning**: Diff frames to see what changed
+The demo server recomputes digests and validates guards. Your client can send its local digest, but the bus is the source of truth.
 
-## Contributing
-
-Small, focused PRs welcome:
-
-- If you touch `openline/schema.py`, include migration note + tests
-- Maintain ≥90% test coverage (`pytest --cov`)
-- Run `ruff` and `mypy` before pushing
-- Update examples if behavior changes
-
-See [`CONTRIBUTING.md`](CONTRIBUTING.md) for details.
+-----
 
 ## Roadmap
 
-- [ ] WebSocket broadcast for multi-agent rooms
-- [ ] Persistence adapters (Postgres, S3)
-- [ ] Determinism probes (verify digest recomputation is stable)
-- [ ] Multi-frame Stitch examples
-- [ ] Witness marks (Merkle proofs + Ed25519 signatures)
+- [ ] WebSocket broadcast & stream replay
+- [ ] Queue/Store adapters (SQS/Kafka, Postgres, S3)
+- [ ] Determinism Anchor probe (batch-invariance check)
+- [ ] Topological coherence scorer plugin (β₀/β₁ via lightweight persistence)
+- [ ] Witness marks (Merkle proofs + signatures) on frames
+- [ ] Multi-frame Stitch examples (RAG planning, tool chains)
+
+-----
+
+## Contributing
+
+We love small, sharp PRs.
+
+- If you touch `openline/schema.py`, include migration note + tests
+- Keep core coverage ≥ 90% (`pytest --cov`)
+- Run `ruff` and `mypy` before pushing
+- Add rationale to PR; update examples/docs if behavior changes
+
+See <CONTRIBUTING.md> for the full checklist.
+
+-----
+
+## Security
+
+Report vulnerabilities via GitHub’s private reporting (Security → Report a vulnerability).
+
+Planned: signed releases & checksums (see <SECURITY.md>).
+
+-----
 
 ## License
 
-MIT. Do what you want, credit the project, no warranties.
-
-## Citation
-
-If you use OLP in research:
-
-```bibtex
-@software{openline_protocol,
-  author = {White, Terrynce},
-  title = {Open Line Protocol (OLP)},
-  version = {0.1.0},
-  url = {https://github.com/terryncew/openline-core},
-  year = {2025}
-}
-```
+MIT (see <LICENSE>). Do what you want, credit the project, no warranties.
 
 -----
 
-## FAQ
+## Understanding the Digest
 
-**Q: Is this proven to improve agent reliability?**  
-A: No. It’s testable infrastructure for structured agent communication. Validation needs empirical work.
+- **b₀** — are we one connected argument or many islands?
+- **cycle_plus** — are we starting to “prove ourselves with ourselves”?
+- **x_frontier** — how many live contradictions remain?
+- **s_over_c** — is support outrunning contradiction?
+- **depth** — how deep is the dependency chain (fragility risk)?
 
-**Q: What’s with the geometry terminology?**  
-A: Design metaphors. “Holonomy gap” is really just a digest diff, “curvature” is a heuristic stress metric. The terms guide what to measure, not literal mathematical claims.
-
-**Q: Should I use this in production?**  
-A: Only if you’re willing to debug it. This is v0.1 experimental infrastructure.
-
-**Q: How does this relate to COLE?**  
-A: COLE monitors single-agent behavior over time. OLP is for multi-agent coordination. They’re complementary layers.
+Keep `Δ_hol` small between SYNC and STITCH, and your agents won’t “clean up” truth by deleting objections—they’ll resolve them on the record.
 
 -----
 
-**OpenLine makes agent reasoning auditable.**  
-The protocol is simple. The hard part is getting agents to use it well.
+## Getting Started Fast
+
+**Option 1: Codespaces**
+
+1. Click the green Code button → Create codespace
+1. In the terminal: `uv sync --extra server && uv run olp-server`
+1. Open a second terminal: `python examples/send_frame.py`
+
+**Option 2: Run locally**
+
+1. Install [uv](https://github.com/astral-sh/uv)
+1. Clone the repo:
+   
+   ```bash
+   git clone https://github.com/terryncew/openline-core.git
+   cd openline-core
+   ```
+1. Install + run:
+   
+   ```bash
+   uv sync --extra server
+   uv run olp-server
+   ```
+1. In another terminal: `python examples/send_frame.py`
+
+You should see a JSON reply with `ok: true` and a digest.
+
+-----
+
+**OpenLine lets agents speak geometry.**
+
+Copy the demo, shape your first Frame, and ship.
