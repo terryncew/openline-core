@@ -269,3 +269,24 @@ You should see a JSON reply with `ok: true` and a digest.
 **OpenLine lets agents speak geometry.**
 
 Copy the demo, shape your first Frame, and ship.
+
+## Cite OpenLine Core
+
+If you use OpenLine Core in academic or policy work, please cite:
+
+**APA**
+White, T. (2025). *OpenLine Core: A tiny protocol for auditable agent receipts*. GitHub. https://github.com/terryncew/openline-core
+
+**BibTeX**
+@software{White_OpenLine_Core_2025,
+  author       = {Terrynce White},
+  title        = {OpenLine Core: A tiny protocol for auditable agent receipts},
+  year         = {2025},
+  url          = {https://github.com/terryncew/openline-core},
+  publisher    = {GitHub},
+  version      = {latest},
+  note         = {Accessed: {{\today}}}
+}
+
+**Plain text**
+White, T. (2025). OpenLine Core: A tiny protocol for auditable agent receipts. GitHub. https://github.com/terryncew/openline-core
