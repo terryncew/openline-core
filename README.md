@@ -33,6 +33,13 @@ uv sync && uv run examples/quickstart.py
 
 Each posted Frame is re-digested and guard-checked.
 
+> **Prereq (1 line):** `pip install uv`  ← installs Astral’s ultra-fast Python tool used in the quickstart.
+
+### Troubleshooting (10-second fixes)
+- **`uv: command not found`** → run `pip install uv`
+- **Port 8088 already in use** → start on another port: `uv run olp-server --port 8090`
+- **Client can’t reach the server** → make sure the server is running, or change the URL/port in your example client.
+
 ### Example Request
 
 ```bash
