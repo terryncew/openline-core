@@ -1,8 +1,6 @@
 # OpenLine Adapters — from text to frame
 
 Adapters turn raw LLM output into an OLP frame: a compact graph of claims, evidence, and counters with a 5-number digest. [COLE](https://github.com/terryncew/COLE-Coherence-Layer-Engine-) then measures it. This directory hosts reference adapters and the adapter API.
-> **Adapters docs:** See [`adapters/README.md`](./adapters/README.md) for the reference `to_frame()` API and heuristics.
------
 
 ## Why frames?
 
