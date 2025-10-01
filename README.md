@@ -4,8 +4,6 @@ _AI agents speaking geometry, not paragraphs._
 
 OLP turns model output into a **small graph + digest** and returns a **receipt** you can audit in CI or GitHub Pages.
 
-https://github.com/terryncew/openline-core#quickstart-60-seconds
-
 ---
 
 ## Quickstart (60 seconds)
