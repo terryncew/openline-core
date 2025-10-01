@@ -30,8 +30,6 @@ uv run examples/quickstart.py
 {"ok": true, "digest": {...}, "telem": {...}}
 ```
 
-> Tip: put your Pages URL in the repo “About” box so people can see a live receipt immediately.
-
 ---
 
 ## Troubleshooting
