@@ -2,6 +2,8 @@
 
 Adapters turn raw LLM output into an OLP frame: a compact graph of claims, evidence, and counters with a 5-number digest. [COLE](https://github.com/terryncew/COLE-Coherence-Layer-Engine-) then measures it. This directory hosts reference adapters and the adapter API.
 
+-----
+
 ## Why frames?
 
 Plain text hides structure. Frames make it auditable:
