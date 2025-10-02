@@ -1,4 +1,4 @@
-# Tester Guide — COLE & OpenLine (Closed Alpha)
+# Tester Guide — COLE & OpenLine (Open Alpha)
 
 This guide takes a tester from zero → a signed receipt and a dashboard tile in ~5 minutes.
 
