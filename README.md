@@ -1,67 +1,61 @@
-# OpenLine Protocol (OLP)
+# OpenLine Core (OLP)
 
-_AI agents speaking geometry, not paragraphs._
-
-OLP turns model output into a **small graph + digest** and returns a **receipt** you can audit in CI or GitHub Pages.
+Tiny server for auditable “frames” of reasoning.  
+Send a frame → get back a compact **digest** + **telemetry** JSON.  
+Designed to pair with COLE (which turns receipts into a simple dashboard).
 
 ---
 
-## Quickstart (60 seconds)
+## Quickstart (≈60–90s)
 
-**Install uv (once)**
-```
+```bash
+# clone
+git clone https://github.com/terryncew/openline-core.git
+cd openline-core
+
+# install & run the server
 pip install uv
-```
-
-**Run the server**
-```
 uv sync --extra server
 uv run olp-server --port 8088
-```
+# server listens on http://127.0.0.1:8088
 
-**Send a demo frame**
-```
+# in another terminal: send a demo frame
+cd openline-core
 uv run examples/quickstart.py
-# or: python examples/send_frame.py
+# expected: {"ok": true, "digest": {...}, "telem": {...}}
 ```
 
-**You should see** a JSON reply like:
-```
-{"ok": true, "digest": {...}, "telem": {...}}
-```
-
----
-
-## Troubleshooting
-
-- **`uv: command not found` →** `pip install uv`
-- **Port in use on 8088 →** `uv run olp-server --port 8090`
-- **Client can’t connect →** make sure the server is running on the same port
-- **No Pages receipt →** ensure `docs/receipt.latest.json` exists (COLE reads this)
+**If port 8088 is busy:** start with `--port 8090` and re-run the client.
 
 ---
 
 ## What you get
 
-- **Frame digest (5 numbers):** `b0, cycle_plus, x_frontier, s_over_c, depth`
-- **Telemetry:** `phi_topo, phi_sem, delta_hol, kappa_eff, evidence_strength`
-- **One JSON artifact per run** that other tools (like **COLE**) can render.
+- **`digest`** — 5-number graph summary (stable, machine-readable)  
+- **`telem`** — simple semantics/topology signals (for downstream guards)  
+- **Schema-first** — Pydantic models; easy to validate in CI
+
+Use OLP alone for receipts, or plug its JSON into **COLE** to visualize κ / Δhol
+and guard outcomes.
 
 ---
 
-## Cite this work
+## Troubleshooting
 
-**APA**
-> White, T. (2025). *OpenLine Protocol and COLE: Auditable receipts for AI runs (κ, Δhol).* GitHub. https://github.com/terryncew/openline-core
+- `uv: command not found` → `pip install uv`  
+- Client can’t connect → confirm `olp-server` is running on the same port  
+- Want raw curl? See `examples/hello_curl.md` (or POST to `/frame` with JSON)
 
-**BibTeX**
-```
-@software{white_openline_2025,
-  author       = {Terrynce White},
-  title        = {OpenLine Protocol and COLE: Auditable receipts for AI runs (\kappa, \Delta hol)},
-  year         = {2025},
-  publisher    = {GitHub},
-  url          = {https://github.com/terryncew/openline-core},
-  note         = {Receipt-per-run with k (stress) and Δhol (drift); open source.}
-}
-```
+---
+
+## Next step: pair with COLE
+
+Repo: https://github.com/terryncew/COLE-Coherence-Layer-Engine-/  
+COLE consumes `docs/receipt.latest.json` and renders a clean dashboard.
+
+---
+
+## License & citation
+
+- License: MIT  
+- Cite: White, T. (2025). *OpenLine Core (OLP) — auditable frames for AI runs*. GitHub. https://github.com/terryncew/openline-core
