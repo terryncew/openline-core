@@ -1,0 +1,42 @@
+{
+  "receipt_type": "bio.screening.v0.1",
+  "request": {
+    "order_id": "ORD-2025-10-02-7F9",
+    "org": "AcmeBio",
+    "iat": "2025-10-02T19:21:00Z"
+  },
+  "provenance": {
+    "engine": "AcmeScreen",
+    "engine_version": "3.4.1",
+    "ruleset_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "model": {
+      "name": "SeqGuard-LM",
+      "ver": "1.9.2",
+      "weights_hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "prompt_policy_hash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+  },
+  "signals": {
+    "tox_sim": { "family": "AB_toxin", "bitscore_p99_bucket": "0.80-0.85" },
+    "frag_hits": { "k": 11, "hits": 7, "covered_pct": 0.12 },
+    "novelty_index": "medium",
+    "heuristics": { "codon_shuffle_suspect": true, "repeat_padding": false },
+    "delta_hol": 0.27
+  },
+  "decision": {
+    "verdict": "HOLD",
+    "guards": ["frag_hits>threshold","codon_shuffle_suspect"],
+    "why": "k=11 hits with moderate coverage and suspicious codon pattern"
+  },
+  "human_eval": {
+    "verdict": "borderline",
+    "note": "Likely evasion attempt; escalate",
+    "annotator": { "role": "peer", "anon_id": "r1" },
+    "iat": "2025-10-02T19:31:00Z",
+    "schema": "human_eval.v1"
+  },
+  "policy": { "share": "regulator-only", "pii": false, "retention_days": 365 },
+  "signatures": [
+    { "alg": "ed25519", "sig": "BASE64_SIGNATURE_EXAMPLE", "key_id": "acme-prod-1" }
+  ]
+}
