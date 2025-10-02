@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openline.dev/schema/bio.screening.v0.1.schema.json",
+  "title": "OpenLine Biosecurity Screening Receipt (v0.1)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["receipt_type","request","provenance","signals","decision","policy","signatures"],
+  "properties": {
+    "receipt_type": { "type": "string", "const": "bio.screening.v0.1" },
+
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["order_id","iat"],
+      "properties": {
+        "order_id": { "type": "string", "minLength": 3, "maxLength": 128 },
+        "org":      { "type": "string", "minLength": 1 },
+        "jurisdiction": { "type": "string" },
+        "iat": { "type": "string", "format": "date-time" }
+      }
+    },
+
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["engine","ruleset_hash","model"],
+      "properties": {
+        "engine": { "type": "string", "minLength": 1 },
+        "engine_version": { "type": "string" },
+        "ruleset_hash": { "type": "string", "pattern": "^sha256:[0-9a-fA-F]{64}$" },
+        "model": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name","ver","weights_hash"],
+          "properties": {
+            "name": { "type": "string" },
+            "ver":  { "type": "string" },
+            "weights_hash": { "type": "string", "pattern": "^sha256:[0-9a-fA-F]{64}$" }
+          }
+        },
+        "prompt_policy_hash": { "type": "string", "pattern": "^sha256:[0-9a-fA-F]{64}$" }
+      }
+    },
+
+    "signals": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["delta_hol"],
+      "properties": {
+        "tox_sim": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "family": { "type": "string" },
+            "bitscore_p99_bucket": { "type": "string", "minLength": 3, "maxLength": 20 }
+          }
+        },
+        "frag_hits": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "k": { "type": "integer", "minimum": 6, "maximum": 15 },
+            "hits": { "type": "integer", "minimum": 0 },
+            "covered_pct": { "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        },
+        "novelty_index": { "type": "string", "enum": ["low","medium","high"] },
+        "heuristics": {
+          "type": "object",
+          "additionalProperties": { "type": "boolean" }
+        },
+        "delta_hol": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["verdict","guards"],
+      "properties": {
+        "verdict": { "type": "string", "enum": ["ALLOW","HOLD","BLOCK"] },
+        "guards":  {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "why": { "type": "string", "maxLength": 1000 }
+      }
+    },
+
+    "human_eval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["verdict","iat","schema"],
+      "properties": {
+        "verdict": { "type": "string", "enum": ["pass","borderline","fail"] },
+        "note":    { "type": "string", "maxLength": 1000 },
+        "annotator": {
+          "type": "object",
+          "properties": {
+            "role":   { "type": "string", "enum": ["author","peer","external"] },
+            "anon_id":{ "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        "iat": { "type": "string", "format": "date-time" },
+        "schema": { "type": "string", "const": "human_eval.v1" }
+      }
+    },
+
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["share","retention_days"],
+      "properties": {
+        "share": { "type": "string", "enum": ["public","regulator-only","internal"] },
+        "pii":   { "type": "boolean", "const": false },
+        "retention_days": { "type": "integer", "minimum": 1, "maximum": 3650 }
+      }
+    },
+
+    "signatures": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["alg","sig"],
+        "properties": {
+          "alg": { "type": "string", "enum": ["ed25519"] },
+          "sig": { "type": "string", "pattern": "^[A-Za-z0-9+/=]{64,}$" },
+          "key_id": { "type": "string" }
+        }
+      }
+    }
+  }
+}
