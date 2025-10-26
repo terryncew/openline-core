@@ -1,0 +1,12 @@
+name: receipt-v15
+on:
+  push: { paths: ["docs/**","schema/**","scripts/**",".github/workflows/receipt-v15.yml"] }
+  pull_request: {}
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate v1.5
+        run: |
+          python3 scripts/validate_v15.py
