@@ -1,0 +1,29 @@
+# OpenLine Policy v1 (thresholds for AMBER/RED + docs for dials)
+policy_id: openline/policy.v1
+policy_hash: "sha256:89209a36c8b5eec5553efc4e07722251b6c023e3bbcfef174ec4bdc0198551ac"
+version: 1
+badges:
+  green:
+    rule: "default unless AMBER/RED rules fire"
+  amber:
+    any:
+      - reason: "curvature warning"
+        when: "d2phi_dt2 < -0.10"
+      - reason: "gradient hurting coherence"
+        when: "dphi_dk < -0.05"
+      - reason: "drift rising"
+        when: "dhol > 0.30"
+  red:
+    any:
+      - reason: "near snap line"
+        when: "kappa >= 0.95"
+      - reason: "contradiction/cycles"
+        when: "guards.contradictions > 0 or guards.cycles > 0"
+dial_docs:
+  scale: q8_signed
+  description: >
+    Three 1-byte dials, emitted only on AMBER/RED.
+    dphi_dk_q8 encodes ∂Φ*/∂κ; d2phi_dt2_q8 encodes d²Φ*/dt²; fresh_ratio_q8 encodes spectral novelty proxy.
+size_guards:
+  green_max_bytes: 640
+  amber_red_max_bytes: 800
