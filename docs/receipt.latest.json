@@ -1,0 +1,26 @@
+{
+  "receipt_version": "olr/1.5",
+  "attrs": {
+    "status": "amber",
+    "ts": "2025-10-01T12:00:00Z",
+    "run_id": "demo-001"
+  },
+  "policy": {
+    "policy_id": "openline/policy.v1",
+    "policy_hash": "sha256:89209a36c8b5eec5553efc4e07722251b6c023e3bbcfef174ec4bdc0198551ac"
+  },
+  "signals": {
+    "phi_star": 0.68,
+    "kappa": 0.82,
+    "dhol": 0.22
+  },
+  "telem": {
+    "dials": {
+      "dphi_dk_q8": 148,
+      "d2phi_dt2_q8": 112,
+      "fresh_ratio_q8": 164,
+      "scale": "q8_signed",
+      "description": "q8_signed maps [-1..+1] -> [0..255], 128 ~ 0"
+    }
+  }
+}
