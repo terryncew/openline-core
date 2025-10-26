@@ -7,7 +7,7 @@
   },
   "policy": {
     "policy_id": "openline/policy.v1",
-    "policy_hash": "sha256:89209a36c8b5eec5553efc4e07722251b6c023e3bbcfef174ec4bdc0198551ac"
+    "policy_hash": "sha256:6babccff24555fa448e5d0dcfd9c1404cd1d1e8c6ca7c151bc675fd7235f8ed6"
   },
   "signals": {
     "phi_star": 0.68,
