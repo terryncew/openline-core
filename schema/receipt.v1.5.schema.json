@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "OpenLine Receipt v1.5",
+  "type": "object",
+  "properties": {
+    "receipt_version": { "type": "string", "const": "olr/1.5" },
+    "attrs": {
+      "type": "object",
+      "properties": {
+        "status": { "type": "string", "enum": ["green","amber","red"] },
+        "ts": { "type": "string" },
+        "run_id": { "type": "string" }
+      },
+      "required": ["status","ts"]
+    },
+    "policy": {
+      "type": "object",
+      "properties": {
+        "policy_id": { "type": "string" },
+        "policy_hash": { "type": "string" }
+      },
+      "required": ["policy_id"]
+    },
+    "signals": {
+      "type": "object",
+      "properties": {
+        "phi_star": { "type": "number" },
+        "kappa": { "type": "number" },
+        "dhol": { "type": "number" }
+      }
+    },
+    "telem": {
+      "type": "object",
+      "properties": {
+        "dials": {
+          "type": "object",
+          "properties": {
+            "dphi_dk_q8": { "type": "integer", "minimum": 0, "maximum": 255, "multipleOf": 1 },
+            "d2phi_dt2_q8": { "type": "integer", "minimum": 0, "maximum": 255, "multipleOf": 1 },
+            "fresh_ratio_q8": { "type": "integer", "minimum": 0, "maximum": 255, "multipleOf": 1 },
+            "scale": { "type": "string", "enum": ["q8_signed"] },
+            "description": { "type": "string" }
+          },
+          "required": ["dphi_dk_q8","d2phi_dt2_q8","fresh_ratio_q8","scale"]
+        }
+      }
+    }
+  },
+  "required": ["receipt_version","attrs","policy"]
+}
